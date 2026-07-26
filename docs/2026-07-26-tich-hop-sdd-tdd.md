@@ -1,7 +1,8 @@
 # Tích hợp SDD (OpenSpec) với TDD (superpowers)
 
 **Ngày:** 2026-07-26
-**Trạng thái:** Nghiên cứu + quyết định kiến trúc. Chưa triển khai.
+**Trạng thái:** Nghiên cứu + quyết định kiến trúc. Bộ cài đã dựng và chạy thử xong trên repo
+nháp (xem [../README.md](../README.md)); chưa cài vào codebase thật.
 **Bối cảnh:** codebase có sẵn, chưa có spec, làm một mình. Đã cài superpowers 6.2.0. Chưa cài OpenSpec.
 
 ---
@@ -497,6 +498,23 @@ Theo thứ tự. Chưa làm gì trong số này.
 ---
 
 ## Phụ lục A — Mức độ tin cậy
+
+**Đã chạy hết một vòng trên repo nháp** (OpenSpec 1.6.0, 2026-07-26) — thiết kế ở mục 5 hoạt động:
+- `openspec init --tools claude` cài đúng 6 lệnh: `propose, explore, apply, archive, sync, update`.
+  Không có `new`/`continue`/`ff`/`verify` — khớp `CORE_WORKFLOWS`.
+- Schema fork đúng cấu trúc dự đoán: `design.requires: [proposal]`, `tasks.requires: [specs, design]`,
+  `apply.requires: [tasks]`, `tracks: tasks.md`, và `apply.instruction` gốc dài **2 dòng**, không
+  một chữ nào về test.
+- Sau bốn sửa đổi: `openspec status` cho `design` và `tasks` cùng `blocked by: specs` — đúng thiết kế.
+- **Cổng mở với 2 trên 5 artifact.** Chỉ có `proposal.md` + `specs/`, `instructions apply` trả
+  `state: "ready"`.
+- `apply.instruction` được **inject nguyên văn** — đọc lại thấy đúng từng chữ đã viết.
+- `openspec list` báo `No tasks`, không chặn. `openspec validate` pass.
+- `openspec archive` gộp delta vào `openspec/specs/csv-export/spec.md` và chuyển change vào `archive/`.
+- **Phân tầng tự hiện trong tooling:** change có `tasks.md` thì `list` báo `0/3 tasks` và archive
+  bật `archive_tasks_incomplete`; change không có thì sạch cả hai.
+- Xác nhận hai cảnh báo: spec mới bị chèn `## Purpose TBD - created by archiving change <name>`;
+  và `archive --json` không kèm `--yes` trả lỗi nhưng **exit 0**.
 
 **Đã kiểm chứng bằng cách chạy thật** (cài OpenSpec 1.6.0, chạy lệnh, đọc `dist/`):
 - `apply: requires: [specs]` + `tracks: null` → tasks.md thành tuỳ chọn thật; apply trả `state: "ready"`
