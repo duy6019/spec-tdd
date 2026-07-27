@@ -101,7 +101,43 @@ OpenSpec 1.6.0 creates the supported agent command/skill surfaces and
 refreshes the selected agent surfaces and preserves the existing config. It
 does not install the bridge's durable routing rules; add those in step 6.
 
-### 3. Copy the schema
+### 3-7. Run the installer
+
+`install.sh` (bash) and `install.ps1` (PowerShell) automate copying the
+schema, selecting it, installing agent routing, and verifying the result
+(steps 3-7 below). Both scripts are equivalent; use whichever matches your
+shell. `openspec init` (step 2) must already have been run against `<target>`
+before installing.
+
+```bash
+"<bridge>/install.sh" --target "<target>" --agents claude,codex,cursor
+```
+
+```powershell
+& '<bridge>\install.ps1' -Target '<target>' -Agents claude,codex,cursor
+```
+
+- `--agents`/`-Agents` accepts any comma-separated subset of `claude`, `codex`,
+  `cursor`, matching the agents initialized in step 2.
+- Add `--dry-run`/`-DryRun` to preview every action without writing files.
+- Add `--force`/`-Force` to overwrite a `config.yaml` that already selects a
+  different schema.
+- The script exits non-zero if a precondition or the final verification
+  fails, so nothing partially wrong is reported as success.
+
+The script prints two things it deliberately does not automate: installing
+Superpowers for each agent (step 1, harness-specific — see the table above)
+and adding project context to `config.yaml` (step 5, project-specific — see
+below). Do both by hand after the script finishes.
+
+Re-running the installer is safe: the bridge-owned schema copy and Cursor rule
+are always overwritten, and the `CLAUDE.md`/`AGENTS.md` routing block is
+replaced in place inside its markers rather than duplicated.
+
+<details>
+<summary>Manual steps (fallback if you don't want to run the scripts)</summary>
+
+#### 3. Copy the schema
 
 Create the destination first. Without it, `cp -r` may silently rename the
 source directory instead of nesting it correctly.
@@ -124,7 +160,7 @@ Expected path:
 <target>/openspec/schemas/spec-tdd/schema.yaml
 ```
 
-### 4. Select the schema
+#### 4. Select the schema
 
 Set the first line of `<target>/openspec/config.yaml`:
 
@@ -132,7 +168,7 @@ Set the first line of `<target>/openspec/config.yaml`:
 schema: spec-tdd
 ```
 
-### 5. Add project context
+#### 5. Add project context
 
 Add project-specific context and rules to `<target>/openspec/config.yaml`. At
 minimum, record the exact test command and the project's non-negotiable
@@ -151,7 +187,7 @@ context: |
 Do not duplicate tier criteria here or in an agent instruction file. Tier
 selection is centralized in `schema.yaml`.
 
-### 6. Install agent routing instructions
+#### 6. Install agent routing instructions
 
 Install the routing asset for each agent initialized in step 2:
 
@@ -186,7 +222,7 @@ These assets contain the same bridge policy in each agent's native routing
 surface. They preserve the host agent's bootstrap requirements, then route
 feature and bug-fix work through OpenSpec.
 
-### 7. Verify
+#### 7. Verify
 
 Run verification from the target project:
 
@@ -217,6 +253,8 @@ Verification is complete only when:
 
 `schema validate` alone does not prove that `openspec/config.yaml` selects the
 schema.
+
+</details>
 
 ## Daily workflow
 
@@ -346,11 +384,14 @@ schemas/spec-tdd/          OpenSpec schema and templates
 CLAUDE.md.fragment.md      Claude Code routing instructions
 AGENTS.md.fragment.md      Codex routing instructions
 agent-rules/cursor/        Cursor Project Rule
+install.sh                 Bash installer (schema copy, routing, verification)
+install.ps1                PowerShell installer (same steps as install.sh)
 README.md                  Installation and operation guide
 ```
 
-No installer, package manifest, wrapper command, hook, or CI workflow is
-required. Installation is a schema copy plus agent-routing configuration.
+No package manifest, hook, or CI workflow is required. Installation is a
+schema copy plus agent-routing configuration, automated by `install.sh` /
+`install.ps1` or done by hand.
 
 ## Upgrade checks
 
