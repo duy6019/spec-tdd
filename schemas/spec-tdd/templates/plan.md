@@ -1,8 +1,12 @@
 # <!-- Change Name --> Implementation Plan
 
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+
 **Goal:** <!-- One sentence describing what this builds -->
 
 **Architecture:** <!-- 2-3 sentences about approach -->
+
+**Tech Stack:** <!-- Key technologies and libraries -->
 
 ## Global Constraints
 
@@ -12,7 +16,7 @@
 
 ---
 
-## Task 1: <!-- Component Name -->
+### Task 1: <!-- Component Name -->
 
 **Files:**
 - Create: `<!-- exact/path/to/file -->`
@@ -21,8 +25,6 @@
 **Interfaces:**
 - Consumes: <!-- exact signatures this task uses from earlier tasks -->
 - Produces: <!-- exact function names, parameter and return types later tasks rely on -->
-
-**Test kind:** SPEC TEST <!-- or CHARACTERIZATION, if pinning existing behavior -->
 
 - [ ] **Step 1: Write the failing test**
 
@@ -50,8 +52,9 @@ git add <!-- paths --> && git commit -m "<!-- message -->"
 
 <!--
 FORMAT RULES — these are machine contracts, not style:
-  1. Task headings MUST be `## Task N: <name>`.
-     superpowers' task-brief awk matches ^#+[ \t]+Task[ \t]+[0-9]+ and exits 3 otherwise.
+  1. Task headings MUST be `### Task N: <name>`, matching
+     superpowers:writing-plans 6.2.0. task-brief accepts one or more # characters
+     but still requires Task N at the start of the heading text.
   2. Every checkbox MUST start at column 0.
      OpenSpec's checkbox regexes anchor ^ directly to [-*]; indented checkboxes are invisible.
   3. No placeholders in a finished plan. "TBD", "add error handling", "similar to Task N",

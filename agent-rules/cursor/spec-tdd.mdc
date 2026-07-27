@@ -1,5 +1,8 @@
-<!-- Add this section to CLAUDE.md at the target project root. -->
-<!-- Keep it outside any generated OpenSpec marker block. -->
+---
+description: Route feature and bug-fix work through the OpenSpec spec-tdd bridge
+globs:
+alwaysApply: true
+---
 
 ## spec-tdd workflow routing
 
@@ -13,7 +16,7 @@ project action. After that bootstrap, use OpenSpec as the planning front door
 for every feature or bug fix and run `openspec list` before selecting a change.
 
 Do not invoke `superpowers:brainstorming` as a separate workflow. The user
-explicitly authorizes this adaptation: `/opsx:propose`, review of `proposal.md`,
+explicitly authorizes this adaptation: `/opsx-propose`, review of `proposal.md`,
 and review of the delta specs are this workflow's design and approval gate.
 Invoke brainstorming only when the user explicitly asks for exploratory
 discovery before creating an OpenSpec change. In that case, redirect its output
@@ -29,7 +32,7 @@ change before creating heavy artifacts.
 - Skip `superpowers:writing-plans`; light changes have no plan file.
 - Do not create `docs/superpowers/`.
 
-Flow: `/opsx:propose` -> review artifacts -> `/opsx:apply` (implement and
+Flow: `/opsx-propose` -> review artifacts -> `/opsx-apply` (implement and
 verify, then stop) -> user explicitly runs
 `openspec archive <change-name> --yes`.
 
@@ -46,10 +49,10 @@ The plan filename must be `<change-name>-plan.md`, never `plan.md`.
 
 ### Closing rules
 
-- `/opsx:apply` owns implementation and verification only. It must stop before
+- `/opsx-apply` owns implementation and verification only. It must stop before
   archive, sync, branch integration, or closing commits.
 - The user closes a verified change explicitly with
-  `openspec archive <change-name> --yes`. Do not use `/opsx:sync`; that path
+  `openspec archive <change-name> --yes`. Do not use `/opsx-sync`; that path
   performs an agent-driven merge without the CLI archive parser's scenario-drop
   guard.
 - After archive, leave commit grouping to the user's instructions and the

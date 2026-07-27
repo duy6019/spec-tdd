@@ -1,5 +1,5 @@
-<!-- Add this section to CLAUDE.md at the target project root. -->
-<!-- Keep it outside any generated OpenSpec marker block. -->
+<!-- Add this section to AGENTS.md at the target project root. -->
+<!-- Keep existing repository instructions and append this workflow section. -->
 
 ## spec-tdd workflow routing
 
@@ -13,8 +13,9 @@ project action. After that bootstrap, use OpenSpec as the planning front door
 for every feature or bug fix and run `openspec list` before selecting a change.
 
 Do not invoke `superpowers:brainstorming` as a separate workflow. The user
-explicitly authorizes this adaptation: `/opsx:propose`, review of `proposal.md`,
-and review of the delta specs are this workflow's design and approval gate.
+explicitly authorizes this adaptation: the `$openspec-propose` skill, review of
+`proposal.md`, and review of the delta specs are this workflow's design and
+approval gate.
 Invoke brainstorming only when the user explicitly asks for exploratory
 discovery before creating an OpenSpec change. In that case, redirect its output
 into the active change and do not create `docs/superpowers/`.
@@ -29,8 +30,8 @@ change before creating heavy artifacts.
 - Skip `superpowers:writing-plans`; light changes have no plan file.
 - Do not create `docs/superpowers/`.
 
-Flow: `/opsx:propose` -> review artifacts -> `/opsx:apply` (implement and
-verify, then stop) -> user explicitly runs
+Flow: `$openspec-propose` -> review artifacts -> `$openspec-apply-change`
+(implement and verify, then stop) -> user explicitly runs
 `openspec archive <change-name> --yes`.
 
 ### Heavy tier
@@ -46,12 +47,12 @@ The plan filename must be `<change-name>-plan.md`, never `plan.md`.
 
 ### Closing rules
 
-- `/opsx:apply` owns implementation and verification only. It must stop before
-  archive, sync, branch integration, or closing commits.
+- `$openspec-apply-change` owns implementation and verification only. It must
+  stop before archive, sync, branch integration, or closing commits.
 - The user closes a verified change explicitly with
-  `openspec archive <change-name> --yes`. Do not use `/opsx:sync`; that path
-  performs an agent-driven merge without the CLI archive parser's scenario-drop
-  guard.
+  `openspec archive <change-name> --yes`. Do not use `$openspec-sync-specs`;
+  that path performs an agent-driven merge without the CLI archive parser's
+  scenario-drop guard.
 - After archive, leave commit grouping to the user's instructions and the
   project's commit policy. Never stage unrelated changes.
 - Invoke `superpowers:finishing-a-development-branch` only when the user asks

@@ -4,11 +4,13 @@ description: >
   Two-tier spec-driven workflow with superpowers TDD.
   LIGHT tier (default): proposal + delta specs, then implement with
   superpowers:test-driven-development in-session. The apply gate is [specs], so
-  /opsx:propose stops after two artifacts.
-  HEAVY tier: additionally design + tasks + <change-name>-plan.md written by
-  superpowers:writing-plans, executed by superpowers:subagent-driven-development.
-  Requires the superpowers plugin. Every change closes with `openspec archive`,
-  which merges the delta into openspec/specs/.
+  the OpenSpec propose workflow stops after two artifacts.
+  HEAVY tier: additionally tasks + <change-name>-plan.md, plus design when its
+  criteria apply. The plan is written by superpowers:writing-plans and executed
+  by superpowers:subagent-driven-development.
+  Requires the superpowers plugin. Every change closes with
+  `openspec archive <change-name> --yes`, which merges the delta into
+  openspec/specs/.
 artifacts:
   - id: proposal
     generates: proposal.md
@@ -253,7 +255,8 @@ artifacts:
       skills list. If it is missing, STOP and tell the user. Do NOT silently
       fall back to writing the plan yourself.
 
-      Use the Skill tool to invoke **superpowers:writing-plans**.
+      Invoke **superpowers:writing-plans** through the agent's native skill
+      mechanism.
 
       OUTPUT REDIRECTION (required):
       - Do NOT write to `docs/superpowers/plans/`. Write the plan directly into
@@ -266,8 +269,10 @@ artifacts:
         apply phase decides the executor, not that menu.
 
       FORMAT IS A MACHINE CONTRACT, not a style preference:
-      - Task headings MUST be `## Task N: <name>`. superpowers' task-brief awk
-        matches `^#+[ \t]+Task[ \t]+[0-9]+`; any other heading makes it exit 3.
+      - Task headings MUST be `### Task N: <name>`, matching
+        superpowers:writing-plans 6.2.0. The task-brief parser accepts one or
+        more `#` characters but still requires `Task N` at the start of the
+        heading text.
       - Every checkbox MUST start at column 0. OpenSpec's checkbox regexes
         anchor `^` directly to `[-*]`, so indented checkboxes are invisible.
 
@@ -284,61 +289,79 @@ apply:
   instruction: |
     STOP. Do not start writing implementation code directly.
 
-    This project runs two tiers. Work out which one applies, then follow it.
+    This project runs two tiers. Follow the decision protocol below before
+    implementation.
 
     ## Which tier
 
-    LIGHT (the default): the change touches one module, adds no dependency,
-    needs no data migration, and does not alter an external contract.
-    HEAVY: anything else, or the user explicitly asked for it.
+    `tasks.md` is the persisted tier marker:
+    - If `tasks.md` exists, the change is HEAVY.
+    - If `tasks.md` does not exist, the change is a LIGHT candidate.
 
-    Mechanical test: if there is no tasks.md in this change directory, you are
-    in LIGHT tier. Do not create one to get out of it.
+    A LIGHT candidate has HEAVY signals if any of these are true:
+    - The change crosses module, service, or package boundaries.
+    - It adds a dependency or introduces a new architectural pattern.
+    - It changes a data format, persisted schema, or external contract.
+    - It requires a migration or has material security/performance risk.
+    - The user explicitly requested a heavy/large change.
+
+    If a LIGHT candidate has any HEAVY signal, STOP before implementation.
+    Explain the signal and ask the user to choose one of these options:
+    1. Promote to HEAVY: create `design.md` when useful, then `tasks.md` and
+       `<change-name>-plan.md`; rerun apply after the user reviews them.
+    2. Continue as LIGHT: record the user's decision in chat and proceed without
+       creating `tasks.md`.
+
+    Never create `tasks.md` merely to resolve the question. The user decides
+    whether a candidate is promoted. If no HEAVY signal exists, proceed as
+    LIGHT without asking.
 
     ## LIGHT tier
 
-    1. Use the Skill tool to invoke `superpowers:test-driven-development`.
+    1. Invoke `superpowers:test-driven-development` through the agent's native
+       skill mechanism.
        If that skill is not in your available skills list, STOP and tell the
        user. Do NOT implement without it.
-    2. Implement in the current session. No worktree, no plan file, no subagents.
+    2. Implement in the current session with no plan file and no subagents.
+       Do not add a bridge-specific worktree rule; follow the default behavior
+       of any applicable Superpowers workspace skill.
     3. The Iron Law governs every line of production code you write:
        "NO PRODUCTION CODE WITHOUT A FAILING TEST FIRST."
        Write the test, run it, watch it fail for the right reason, then implement.
 
-    ## LIGHT tier — legacy code carve-out
-
-    Your human partner has granted the following standing exception, which
-    satisfies test-driven-development's own "No exceptions without your human
-    partner's permission" clause. Follow it as compliance, not as an override.
-
-    Declare each test's KIND before you run it:
-    - A SPEC TEST drives new or changed behavior and MUST fail first. Passing
-      immediately means the test is defective — fix the test.
-    - A CHARACTERIZATION TEST pins behavior that already exists and MUST pass
-      first. Passing immediately is its SUCCESS CONDITION, never a red flag.
-      The Iron Law governs production-code emission; writing a characterization
-      test emits no production code, so it does not trigger the Iron Law.
-      Verify it by deliberately breaking the production code, watching the test
-      fail, then reverting the break.
-
-    You may NOT reclassify a spec test as a characterization test after seeing
-    it pass. Characterization tests live under `tests/characterization/` so the
-    declaration is auditable in the diff, and they are committed BEFORE the
-    production change they protect.
-
-    Bug fixes need no carve-out: a test reproducing a bug asserts correct
-    behavior and therefore fails honestly. That is a genuine RED.
-
     ## HEAVY tier
 
-    1. Commit the change artifacts first:
-       `git add openspec/changes/<name>/ && git commit`
-       Nothing in superpowers 6.2.0 carries untracked files into a worktree.
-       Skip this and the executor reads a plan that is not there.
-    2. Worktrees are OPTIONAL and off by default on this solo project. Invoke
-       `superpowers:using-git-worktrees` only if the user asks for one.
-    3. Use the Skill tool to invoke `superpowers:subagent-driven-development`,
-       pointed at `<change-name>-plan.md`.
+    1. Require `tasks.md`, the exact `<change-name>-plan.md`, and at least one
+       delta spec BEFORE any workspace or commit handling. Do not accept a plan
+       belonging to another change. If any required Heavy artifact is missing,
+       STOP and tell the user which artifact must be created and reviewed before
+       apply can be rerun. `design.md` remains optional and is not part of this
+       preflight.
+    2. Resolve the workspace choice BEFORE creating any bridge-requested commit:
+       - First detect whether the session is already in an isolated worktree. If
+         it is, use that workspace and do not create another one.
+       - Otherwise ask whether the user wants an isolated worktree or wants to
+         work in the current checkout. Record the answer so
+         `superpowers:using-git-worktrees` can honor it without asking again.
+       - If the user chooses the current checkout, do NOT commit the OpenSpec
+         artifacts merely for this bridge. If the checkout is main/master,
+         obtain the explicit consent required by subagent-driven-development.
+       - Only if the user chooses a new worktree, inspect
+         `git status --short -- openspec/changes/<name>/`. If these artifacts
+         have uncommitted changes, handle the commit according to the user's
+         instructions and the target project's commit policy. Never stage
+         unrelated files. If the applicable policy is unclear, STOP and ask.
+       - After any required artifact commit, invoke
+         `superpowers:using-git-worktrees` through the agent's native skill
+         mechanism. Tell it the user has already consented. Once inside the new
+         workspace, verify that `tasks.md`, `<change-name>-plan.md`, and every
+         delta spec exist. If any are missing, STOP instead of implementing
+         from stale context.
+    3. Invoke `superpowers:subagent-driven-development` through the agent's
+       native skill mechanism, pointed at `<change-name>-plan.md`. Tell it to
+       run through its final whole-branch review and clean up only its temporary
+       SDD scratch workspace, then RETURN to this apply workflow instead of
+       invoking `superpowers:finishing-a-development-branch`.
     4. REQUIRED — do not skip, and do not assume it happens by itself:
        subagent-driven-development does NOT activate test-driven-development in
        superpowers 6.2.0. Its implementer prompt only says "Write tests
@@ -350,16 +373,21 @@ apply:
        every file under this change's `specs/` and require a
        requirement-by-requirement conformance check against the diff.
 
-    ## Both tiers — closing
+    ## Both tiers — verification and handoff
 
-    Before archiving, re-read this change's `specs/` delta. If what you built
-    differs from any scenario, edit the delta spec to describe what was actually
-    built, and say in chat which scenarios you changed and why. A delta spec
-    that does not match the merged code is a defect, not a plan.
-
-    Close with the CLI: `openspec archive <change-name>`. It is a deterministic
-    parser with a scenario-drop guard. Do NOT use /opsx:sync — that path is an
-    agent-driven freehand merge with no such guard.
-
-    Archive BEFORE invoking `superpowers:finishing-a-development-branch`, so the
-    synced spec lands in the same diff.
+    1. Re-read this change's delta specs and compare every requirement and
+       scenario with the implementation and tests. If they differ, STOP and
+       show the user each concrete mismatch. Ask the user to decide whether to:
+       - fix the implementation so it conforms to the reviewed spec; or
+       - revise the spec to describe a newly approved behavior.
+       Never edit an approved spec merely to match the code. After the user's
+       decision, make only the chosen correction and repeat the conformance
+       check plus all affected tests.
+    2. Invoke `superpowers:verification-before-completion` through the agent's
+       native skill mechanism. Run the target project's full test command from
+       `openspec/config.yaml` and require fresh passing output.
+    3. STOP after implementation and verification. Do NOT archive the change,
+       do NOT invoke an agent-driven OpenSpec sync surface, and do NOT invoke
+       `superpowers:finishing-a-development-branch`. Report the verification
+       evidence and tell the user that the explicit next command is:
+       `openspec archive <change-name> --yes`.
