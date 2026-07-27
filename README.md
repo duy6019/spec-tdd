@@ -20,13 +20,6 @@ light-tier artifacts instead of creating every possible artifact.
 `tasks.md` is the persisted tier marker. A change without it is a light
 candidate; a change with it is heavy.
 
-## Naming
-
-The schema is named `spec-tdd`. This repository is named `sdd-tdd` because it
-contains the broader SDD/TDD integration research. The distinction avoids a
-collision with Superpowers' `.superpowers/sdd/`, where SDD means
-subagent-driven development.
-
 ## Prerequisites
 
 1. The target project is a Git repository with at least one commit.
@@ -57,7 +50,7 @@ Alternatively, replace each `openspec` command below with
 
 Define these paths before installing:
 
-- `<bridge>`: the absolute path to this `sdd-tdd` checkout.
+- `<bridge>`: the absolute path to this `spec-tdd` checkout.
 - `<target>`: the absolute path to the project receiving the bridge.
 
 Replace the placeholders in every command below. Commands that operate on
