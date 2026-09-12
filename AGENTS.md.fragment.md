@@ -9,8 +9,15 @@ Project context and non-negotiable constraints belong in `openspec/config.yaml`.
 ### Agent bootstrap and workflow authority
 
 Honor the host agent's mandatory skill-discovery/bootstrap step before taking
-project action. After that bootstrap, use OpenSpec as the planning front door
-for every feature or bug fix and run `openspec list` before selecting a change.
+project action.
+
+Do not use OpenSpec by default. Activate this workflow only when the user
+explicitly asks to use OpenSpec, invokes an OpenSpec command or skill, or asks
+to continue an already active OpenSpec change. Merely discussing OpenSpec or
+having OpenSpec files in the repository does not authorize its use. Otherwise,
+implement the request directly without running OpenSpec commands or creating
+OpenSpec artifacts. Once the workflow is activated, run `openspec list` before
+selecting a change and follow the routing below.
 
 Do not invoke `superpowers:brainstorming` as a separate workflow. The user
 explicitly authorizes this adaptation: the `$openspec-propose` skill, review of
@@ -44,6 +51,17 @@ change directory, never into `docs/superpowers/plans/`.
 The plan filename must be `<change-name>-plan.md`, never `plan.md`.
 `sdd-workspace` derives its workspace slug from the plan basename; a shared
 `plan.md` name would make unrelated changes collide.
+
+### Implementation defaults
+
+- Implement directly in the active agent session by default. Do not use
+  subagents or delegate work unless the user explicitly requests it.
+- Do not perform code review after individual tasks. After all implementation
+  tasks are complete, perform one review of the whole change before final
+  verification.
+- Prefer straightforward, readable code with clear function and variable
+  names. Use the simplest design that satisfies the reviewed requirements;
+  avoid unnecessary abstractions and over-engineering.
 
 ### Closing rules
 

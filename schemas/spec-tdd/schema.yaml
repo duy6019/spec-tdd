@@ -7,7 +7,7 @@ description: >
   the OpenSpec propose workflow stops after two artifacts.
   HEAVY tier: additionally tasks + <change-name>-plan.md, plus design when its
   criteria apply. The plan is written by superpowers:writing-plans and executed
-  by superpowers:subagent-driven-development.
+  directly by the active agent with superpowers TDD.
   Requires the superpowers plugin. Every change closes with
   `openspec archive <change-name> --yes`, which merges the delta into
   openspec/specs/.
@@ -316,6 +316,19 @@ apply:
     whether a candidate is promoted. If no HEAVY signal exists, proceed as
     LIGHT without asking.
 
+    ## Implementation defaults
+
+    These rules apply to both tiers:
+    - Implement directly in the active agent session by default. Do not invoke
+      subagent-driven-development, dispatch subagents, or delegate work unless
+      the user explicitly requests delegation.
+    - Do not perform code review after individual tasks. Complete all
+      implementation tasks first, then perform one review of the whole change
+      before final verification.
+    - Prefer straightforward, readable code with clear function and variable
+      names. Choose the simplest implementation that satisfies the reviewed
+      requirements. Avoid unnecessary abstractions and over-engineering.
+
     ## LIGHT tier
 
     1. Invoke `superpowers:test-driven-development` through the agent's native
@@ -345,7 +358,7 @@ apply:
          `superpowers:using-git-worktrees` can honor it without asking again.
        - If the user chooses the current checkout, do NOT commit the OpenSpec
          artifacts merely for this bridge. If the checkout is main/master,
-         obtain the explicit consent required by subagent-driven-development.
+         obtain explicit consent before implementation.
        - Only if the user chooses a new worktree, inspect
          `git status --short -- openspec/changes/<name>/`. If these artifacts
          have uncommitted changes, handle the commit according to the user's
@@ -357,25 +370,25 @@ apply:
          workspace, verify that `tasks.md`, `<change-name>-plan.md`, and every
          delta spec exist. If any are missing, STOP instead of implementing
          from stale context.
-    3. Invoke `superpowers:subagent-driven-development` through the agent's
-       native skill mechanism, pointed at `<change-name>-plan.md`. Tell it to
-       run through its final whole-branch review and clean up only its temporary
-       SDD scratch workspace, then RETURN to this apply workflow instead of
-       invoking `superpowers:finishing-a-development-branch`.
-    4. REQUIRED — do not skip, and do not assume it happens by itself:
-       subagent-driven-development does NOT activate test-driven-development in
-       superpowers 6.2.0. Its implementer prompt only says "Write tests
-       (following TDD if task says to)". So you MUST state in every dispatch
-       that the task is TDD-required.
-    5. Tick the tasks.md checkboxes as coarse tasks complete. No superpowers
-       skill does this for you.
-    6. When you dispatch the final whole-branch review, include the paths of
-       every file under this change's `specs/` and require a
-       requirement-by-requirement conformance check against the diff.
+    3. Invoke `superpowers:test-driven-development` through the agent's native
+       skill mechanism. If that skill is unavailable, STOP and tell the user.
+       Do NOT implement without it.
+    4. Read `<change-name>-plan.md` and execute its tasks sequentially in the
+       active agent session. Do not invoke subagent-driven-development or
+       dispatch task implementers/reviewers unless the user explicitly requests
+       delegation. For every implementation task, write and run the failing
+       test before writing the minimal implementation, then run it and watch it
+       pass.
+    5. Tick the tasks.md checkboxes as coarse tasks complete.
 
     ## Both tiers — verification and handoff
 
-    1. Re-read this change's delta specs and compare every requirement and
+    1. After all implementation tasks are complete, perform one whole-change
+       code review directly in the active session. Do not insert code-review
+       gates between individual tasks. Review the complete diff for correctness,
+       simplicity, readable naming, unnecessary abstractions, and
+       over-engineering.
+    2. Re-read this change's delta specs and compare every requirement and
        scenario with the implementation and tests. If they differ, STOP and
        show the user each concrete mismatch. Ask the user to decide whether to:
        - fix the implementation so it conforms to the reviewed spec; or
@@ -383,10 +396,10 @@ apply:
        Never edit an approved spec merely to match the code. After the user's
        decision, make only the chosen correction and repeat the conformance
        check plus all affected tests.
-    2. Invoke `superpowers:verification-before-completion` through the agent's
+    3. Invoke `superpowers:verification-before-completion` through the agent's
        native skill mechanism. Run the target project's full test command from
        `openspec/config.yaml` and require fresh passing output.
-    3. STOP after implementation and verification. Do NOT archive the change,
+    4. STOP after implementation and verification. Do NOT archive the change,
        do NOT invoke an agent-driven OpenSpec sync surface, and do NOT invoke
        `superpowers:finishing-a-development-branch`. Report the verification
        evidence and tell the user that the explicit next command is:

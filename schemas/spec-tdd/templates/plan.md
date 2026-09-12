@@ -1,6 +1,6 @@
 # <!-- Change Name --> Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **For the implementing agent:** Execute this plan directly in the active session. Do not delegate to subagents unless the user explicitly requests it. Use TDD for every implementation task, and perform code review once after all tasks are complete rather than after each task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** <!-- One sentence describing what this builds -->
 
@@ -13,6 +13,10 @@
 <!-- Project-wide requirements copied verbatim from the specs and design:
      version floors, dependency limits, naming rules, platform requirements.
      One line each. Every task's requirements implicitly include this section. -->
+
+- Prefer straightforward, readable code and clear function and variable names.
+- Use the simplest design that satisfies the requirements. Avoid unnecessary
+  abstractions and over-engineering.
 
 ---
 

@@ -7,7 +7,14 @@ bridge files are written in English.
 ## Core idea
 
 OpenSpec owns proposal, behavioral specs, and archive. Superpowers owns TDD and,
-for heavy changes, detailed planning and subagent execution.
+for heavy changes, detailed planning. Implementation runs directly in the active
+agent session by default.
+
+The bridge is opt-in per task. Installing it does not make OpenSpec the default
+workflow for ordinary feature or bug-fix requests. An agent activates OpenSpec
+only when the user explicitly requests it, invokes an OpenSpec command or skill,
+or asks to continue an already active OpenSpec change. Merely discussing
+OpenSpec or having its files in the repository is not activation.
 
 The OpenSpec apply gate is `[specs]`, so the Propose surface stops after the two
 light-tier artifacts instead of creating every possible artifact.
@@ -15,7 +22,7 @@ light-tier artifacts instead of creating every possible artifact.
 | Tier | Planning artifacts | Executor |
 |---|---|---|
 | Light | `proposal.md` + delta specs | `superpowers:test-driven-development` in the current session |
-| Heavy | Light artifacts + optional `design.md` + `tasks.md` + `<change-name>-plan.md` | `superpowers:subagent-driven-development` |
+| Heavy | Light artifacts + optional `design.md` + `tasks.md` + `<change-name>-plan.md` | Active agent, executing the reviewed plan with `superpowers:test-driven-development` |
 
 `tasks.md` is the persisted tier marker. A change without it is a light
 candidate; a change with it is heavy.
@@ -28,10 +35,6 @@ candidate; a change with it is heavy.
    versions are not assumed compatible; complete the upgrade checks below
    before adopting one.
 4. OpenSpec CLI 1.6.0 is available.
-5. Heavy tier requires a Bash-compatible shell available to the agent because
-   `subagent-driven-development` runs Bash helper scripts. Git Bash, WSL, Linux,
-   and macOS are suitable; having Git Bash installed but absent from the agent's
-   `PATH` is not sufficient.
 
 Shell snippets use POSIX syntax by default. PowerShell equivalents are included
 for filesystem and configuration-verification steps so Light-tier installation
@@ -75,9 +78,9 @@ for every agent you use:
 Restart the agent after installation. In its plugin manager, confirm the
 installed version is 6.2.0. Then confirm the available skill list includes at
 least `superpowers:test-driven-development`, `superpowers:writing-plans`,
-`superpowers:subagent-driven-development`, `superpowers:using-git-worktrees`,
-and `superpowers:verification-before-completion`. If the marketplace installed
-a newer version, treat it as an upgrade and complete the upgrade checks before
+`superpowers:using-git-worktrees`, and
+`superpowers:verification-before-completion`. If the marketplace installed a
+newer version, treat it as an upgrade and complete the upgrade checks before
 using this bridge in a real project.
 
 ### 2. Initialize or refresh OpenSpec
@@ -260,6 +263,11 @@ schema.
 
 ### Agent invocation
 
+OpenSpec is not invoked automatically. For work that should use this bridge,
+explicitly choose the appropriate Propose or Apply surface below. Without that
+request, the agent implements directly and does not run OpenSpec commands or
+create OpenSpec artifacts.
+
 OpenSpec 1.6.0 exposes the same workflow differently in each agent:
 
 | Agent | Propose | Apply |
@@ -314,11 +322,19 @@ After review:
 ```text
 Apply surface
         -> choose current checkout or a new worktree when not already isolated
-        -> execute the reviewed plan with TDD
-        -> run final review, spec conformance, and full verification
+        -> active agent executes the reviewed plan directly with TDD
+        -> after all tasks, run one whole-change review, spec conformance,
+           and full verification
         -> stop; no archive or branch integration
 openspec archive <change-name> --yes
 ```
+
+Direct implementation is the default for both tiers. The agent does not
+delegate tasks or reviews to subagents unless the user explicitly requests
+delegation. It does not review code after each task; code review happens once,
+after all implementation tasks are complete. Implementations favor readable,
+straightforward code, clear function and variable names, and the simplest
+design that meets the reviewed requirements without unnecessary abstractions.
 
 Before Heavy execution, the bridge detects whether the current checkout is
 already isolated. If it is not, it asks the user whether to continue in place
@@ -329,16 +345,17 @@ worktree, following the user's instructions and the target project's commit
 policy. It never stages unrelated files, and it asks when the policy is
 unclear.
 
-After the final whole-branch review, `superpowers:subagent-driven-development`
-returns to the active Apply surface. Apply compares implementation and tests
-with the reviewed specs, lets the user choose between a code fix and an
-approved spec revision if they diverge, runs the complete verification command,
-and stops. The user archives with the explicit command shown above.
+After the active agent completes all planned tasks, it reviews the whole change
+once. Apply then compares implementation and tests with the reviewed specs,
+lets the user choose between a code fix and an approved spec revision if they
+diverge, runs the complete verification command, and stops. The user archives
+with the explicit command shown above.
 
-Task-level implementation commits inside a reviewed Heavy plan retain
-Superpowers' default behavior. The bridge separately leaves artifact commits,
-archive-related commits, closing commit grouping, and branch integration under
-the user's instructions and the target project's commit policy.
+Task-level implementation commits inside a reviewed Heavy plan retain the
+plan's behavior, but they do not trigger task-level code review. The bridge
+separately leaves artifact commits, archive-related commits, closing commit
+grouping, and branch integration under the user's instructions and the target
+project's commit policy.
 `superpowers:finishing-a-development-branch` is invoked only when the user
 explicitly asks for integration help and the work is actually on a development
 branch or worktree; it is never an automatic part of apply.
@@ -372,7 +389,7 @@ openspec show <name>
 proposal -> specs ----------------------> apply gate
                |                            |
                +-> design (optional)        +-> light: in-session TDD
-               +-> tasks -> plan            +-> heavy: subagent-driven development
+               +-> tasks -> plan            +-> heavy: direct plan execution with TDD
 ```
 
 Design and tasks independently depend on specs. Plan depends on tasks.
@@ -404,11 +421,11 @@ After upgrading OpenSpec or Superpowers:
 3. Confirm a light change reaches apply with no `tasks.md`.
 4. Confirm heavy plan headings still match `### Task N: <name>` and checkboxes
    remain at column zero.
-5. Check whether `subagent-driven-development` now activates TDD itself. In
-   Superpowers 6.2.0 it does not, so the schema explicitly marks every dispatch
-   as TDD-required.
-6. Confirm the Claude Code, Codex, and Cursor routing assets still suppress a
-   second brainstorming workflow and keep archive/integration outside apply.
+5. Confirm both tiers still default to direct implementation, do not dispatch
+   subagents, and perform code review only once after all implementation tasks.
+6. Confirm the Claude Code, Codex, and Cursor routing assets keep OpenSpec
+   opt-in, suppress a second brainstorming workflow after activation, and keep
+   archive/integration outside apply.
 7. Run one light and one heavy change in a disposable repository before rolling
    the upgraded bundle into production projects.
 
